@@ -16,7 +16,7 @@ class SamsungCheckIn:
         try:
             params = {"ramdon": str(int(round(time.time() * 1000)))}
             user_info = session.get(
-                url=f"http://www.samsungmembers.cn/Shared/CheckUserLogin?ramdon=1613969035891", params=params
+                url=f"http://www.samsungmembers.cn/Shared/CheckUserLogin", params=params
             ).json()
             username = user_info.get("Data", {}).get("UserName")
         except Exception as e:
@@ -59,7 +59,9 @@ class SamsungCheckIn:
 
 
 if __name__ == "__main__":
-    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json"), "r", encoding="utf-8") as f:
+    with open(
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "config/config.json"), "r", encoding="utf-8"
+    ) as f:
         datas = json.loads(f.read())
     _samsung_cookie_list = datas.get("SAMSUNG_COOKIE_LIST", [])
     SamsungCheckIn(samsung_cookie_list=_samsung_cookie_list).main()

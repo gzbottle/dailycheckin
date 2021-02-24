@@ -16,16 +16,18 @@ class WWW2nzzCheckIn:
 
     @staticmethod
     def sign(session):
+        response = session.get(url="http://www.2nzz.com/index.php", verify=False)
+        formhash = re.findall(r'<input type="hidden" name="formhash" value="(.*?)"', response.text)[0]
         params = (
             ("id", "dsu_paulsign:sign"),
-            ("908446a2", ""),
-            ("infloat", "yes"),
-            ("handlekey", "dsu_paulsign"),
+            ("operation", "qiandao"),
+            ("infloat", "1"),
+            ("sign_as", "1"),
             ("inajax", "1"),
-            ("ajaxtarget", "fwin_content_dsu_paulsign"),
         )
-        response = session.post(url="https://www.2nzz.com/plugin.php", verify=False, params=params)
-        user_rep = session.get(url="https://www.2nzz.com/home.php")
+        data = {"formhash": formhash, "qdxq": "kx", "qdmode": "2", "todaysay": "", "fastreply": "0"}
+        response = session.post(url="http://www.2nzz.com/plugin.php", params=params, data=data, verify=False)
+        user_rep = session.get(url="http://www.2nzz.com/home.php")
         uid = re.findall(r"uid=(\d+)\"", user_rep.text)
         uid = uid[0] if uid else "未获取到 UID"
         if "您今天已经签到过了或者签到时间还未开始" in response.text:
@@ -46,11 +48,10 @@ class WWW2nzzCheckIn:
             requests.utils.add_dict_to_cookiejar(session.cookies, www2nzz_cookie)
             session.headers.update(
                 {
-                    "Origin": "https://www.2nzz.com",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.66",
+                    "Origin": "http://www.2nzz.com",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.74",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                    "Referer": "https://www.2nzz.com/index.php",
+                    "Referer": "http://www.2nzz.com/index.php",
                     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
                 }
             )
@@ -61,7 +62,9 @@ class WWW2nzzCheckIn:
 
 
 if __name__ == "__main__":
-    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json"), "r", encoding="utf-8") as f:
+    with open(
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "config/config.json"), "r", encoding="utf-8"
+    ) as f:
         datas = json.loads(f.read())
     _www2nzz_cookie_list = datas.get("WWW2NZZ_COOKIE_LIST", [])
     WWW2nzzCheckIn(www2nzz_cookie_list=_www2nzz_cookie_list).main()

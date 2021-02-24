@@ -15,6 +15,7 @@ from utils.message import (
     message2server,
     message2server_turbo,
     message2telegram,
+    important_notice,
 )
 
 
@@ -43,7 +44,7 @@ def main_handler(event, context):
         else:
             message = None
         try:
-            with open(os.path.join(os.path.dirname(__file__), "config.json"), "r", encoding="utf-8") as f:
+            with open(os.path.join(os.path.dirname(__file__), "config/config.json"), "r", encoding="utf-8") as f:
                 data = json.loads(f.read())
             dingtalk_secret = data.get("DINGTALK_SECRET")
             dingtalk_access_token = data.get("DINGTALK_ACCESS_TOKEN")
@@ -68,7 +69,6 @@ def main_handler(event, context):
             content_list += msg_list
     elif message == "qqread":
         return
-
     else:
         for one_check, check_func in checkin_map.items():
             if one_check not in ["XMLY_COOKIE_LIST"]:
@@ -91,9 +91,7 @@ def main_handler(event, context):
                 print(e)
                 msg_list = []
             content_list += msg_list
-    use_time_info = f"本次任务使用时间: {time.time() - start_time} 秒"
-    content_list.append(use_time_info)
-    content = "\n-----------------------------\n\n".join(content_list)
+
     if message == "xmly":
         if utc_time.hour in [9, 18] and utc_time.minute == 0:
             flag = True
@@ -102,21 +100,31 @@ def main_handler(event, context):
     else:
         flag = True
     if flag:
-        if dingtalk_access_token and dingtalk_secret:
-            message2dingtalk(
-                dingtalk_secret=dingtalk_secret, dingtalk_access_token=dingtalk_access_token, content=content
-            )
-        if sckey:
-            message2server(sckey=sckey, content=content)
-        if sendkey:
-            message2server_turbo(sendkey=sendkey, content=content)
-        if qmsg_key:
-            for content in content_list:
+        use_time_info = f"本次任务使用时间: {time.time() - start_time} 秒"
+        content_list.append(use_time_info)
+        content_str = "\n-----------------------------\n\n".join(content_list)
+        notice = important_notice()
+        message_list = [content_str]
+        if notice:
+            message_list.append(notice)
+            content_list.append(notice)
+        for message in message_list:
+            if dingtalk_access_token and dingtalk_secret:
+                message2dingtalk(
+                    dingtalk_secret=dingtalk_secret, dingtalk_access_token=dingtalk_access_token, content=message
+                )
+            if sckey:
+                message2server(sckey=sckey, content=message)
+            if sendkey:
+                message2server_turbo(sendkey=sendkey, content=message)
+            if tg_user_id and tg_bot_token:
+                message2telegram(tg_user_id=tg_user_id, tg_bot_token=tg_bot_token, content=message)
+            if bark_url:
+                message2bark(bark_url=bark_url, content=message)
+        for content in content_list:
+            if qmsg_key:
                 message2qmsg(qmsg_key=qmsg_key, content=content)
-        if tg_user_id and tg_bot_token:
-            message2telegram(tg_user_id=tg_user_id, tg_bot_token=tg_bot_token, content=content)
-        if coolpushskey:
-            for content in content_list:
+            if coolpushskey:
                 message2coolpush(
                     coolpushskey=coolpushskey,
                     content=content,
@@ -124,8 +132,6 @@ def main_handler(event, context):
                     coolpushwx=coolpushwx,
                     coolpushemail=coolpushemail,
                 )
-        if bark_url:
-            message2bark(bark_url=bark_url, content=content)
     return
 
 
