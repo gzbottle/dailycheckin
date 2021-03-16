@@ -11,8 +11,8 @@ import rsa
 
 
 class Cloud189CheckIn:
-    def __init__(self, cloud189_account_list):
-        self.cloud189_account_list = cloud189_account_list
+    def __init__(self, check_item: dict):
+        self.check_item = check_item
         self.b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
     @staticmethod
@@ -112,29 +112,30 @@ class Cloud189CheckIn:
             msg += f"\n第一次抽奖: {response.text}"
         else:
             description = response.json().get("description", "")
+            if description in ["1", 1]:
+                description = "50M空间"
             msg += f"\n第一次抽奖: 获得{description}"
         response = session.get(url=url2, headers=headers)
         if "errorCode" in response.text:
             msg += f"\n第二次抽奖: {response.text}"
         else:
             description = response.json().get("description", "")
+            if description in ["1", 1]:
+                description = "50M空间"
             msg += f"\n第二次抽奖: 获得{description}"
         return msg
 
     def main(self):
-        msg_list = []
-        for cloud189_account in self.cloud189_account_list:
-            cloud189_phone = cloud189_account.get("cloud189_phone")
-            cloud189_password = cloud189_account.get("cloud189_password")
-            session = requests.Session()
-            flag = self.login(session=session, username=cloud189_phone, password=cloud189_password)
-            if flag is True:
-                sign_msg = self.sign(session=session)
-            else:
-                sign_msg = flag
-            msg = f"【天翼云盘】\n帐号信息: {cloud189_phone}\n{sign_msg}"
-            msg_list.append(msg)
-        return msg_list
+        cloud189_phone = self.check_item.get("cloud189_phone")
+        cloud189_password = self.check_item.get("cloud189_password")
+        session = requests.Session()
+        flag = self.login(session=session, username=cloud189_phone, password=cloud189_password)
+        if flag is True:
+            sign_msg = self.sign(session=session)
+        else:
+            sign_msg = flag
+        msg = f"帐号信息: {cloud189_phone}\n{sign_msg}"
+        return msg
 
 
 if __name__ == "__main__":
@@ -142,5 +143,5 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "config/config.json"), "r", encoding="utf-8"
     ) as f:
         datas = json.loads(f.read())
-    _cloud189_account_list = datas.get("CLOUD189_ACCOUNT_LIST", [])
-    Cloud189CheckIn(cloud189_account_list=_cloud189_account_list).main()
+    _check_item = datas.get("CLOUD189_ACCOUNT_LIST", [])[0]
+    print(Cloud189CheckIn(check_item=_check_item).main())
